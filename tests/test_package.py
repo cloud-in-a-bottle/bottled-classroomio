@@ -61,6 +61,7 @@ class PackageTests(unittest.TestCase):
         storage_location = nginx.split("location ~ ^/(videos|documents|media)(/|$)", 1)[1].split("}", 1)[0]
         self.assertIn("access_log off;", storage_location)
         self.assertIn("proxy_buffer_size 64k;", (ROOT / "dashboard-proxy.conf").read_text())
+        self.assertIn("proxy_buffers 8 64k;", (ROOT / "dashboard-proxy.conf").read_text())
 
     def test_fresh_instance_auth_is_owner_gated(self):
         nginx = (ROOT / "nginx.conf").read_text()
