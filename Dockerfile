@@ -1,17 +1,26 @@
-# ClassroomIO publishes three independently built application images. Keep each
-# complete /app tree because pnpm's workspace links point into its root virtual
-# store. The digests below are a coherent upstream snapshot published on
-# 2026-08-24.
+# ClassroomIO publishes three independently built application images. The
+# digests below are a coherent upstream snapshot published on 2026-08-24.
 FROM docker.io/classroomio/api@sha256:89f33303bf4988395895db6b3682505de44987e0b849a15a46dbbd71264f18ec AS classroomio-api
+
+# The upstream images contain the whole development monorepo. pnpm deploy emits
+# portable production trees so the final image does not duplicate several GiB
+# of build tooling for the dashboard and jobs worker.
 FROM docker.io/classroomio/dashboard@sha256:5d71e9f39aaed493151f2a2a3a796e8a9f3d38e11a3c7b9e033b79ceb9e7b98f AS classroomio-dashboard
+RUN pnpm --filter @cio/dashboard --prod deploy --legacy /runtime/dashboard \
+    && rm -rf /runtime/dashboard/build \
+    && cp -a /app/apps/dashboard/build /runtime/dashboard/build
+
+FROM docker.io/classroomio/jobs@sha256:c36ef703f102fa538aaffc78366ab0d9b72bcf3474f7fd2f890294e65bffbc2c AS classroomio-jobs
+RUN pnpm --filter @cio/jobs-worker --prod deploy --legacy /runtime/jobs
 
 # MinIO and its client are pinned to immutable multi-architecture manifests.
 FROM docker.io/minio/minio@sha256:a1ea29fa28355559ef137d71fc570e508a214ec84ff8083e39bc5428980b015e AS minio
 FROM docker.io/minio/mc@sha256:aead63c77f9db9107f1696fb08ecb0faeda23729cde94b0f663edf4fe09728e3 AS minio-client
 
-# The jobs image is the final base because it already contains Node 20, the
-# complete worker dependency tree, ffmpeg, and ffprobe.
-FROM docker.io/classroomio/jobs@sha256:c36ef703f102fa538aaffc78366ab0d9b72bcf3474f7fd2f890294e65bffbc2c
+# Keep the API image as the final base. Its full tree is also required by the
+# upstream database setup command, which runs TypeScript migration and seed
+# scripts. Using it as the base shares those layers instead of copying them.
+FROM classroomio-api
 
 ARG DEBIAN_FRONTEND=noninteractive
 USER root
@@ -21,6 +30,7 @@ RUN apt-get update \
         bash \
         ca-certificates \
         curl \
+        ffmpeg \
         gosu \
         nginx \
         openssl \
@@ -39,8 +49,8 @@ RUN apt-get update \
 
 COPY --from=minio /usr/bin/minio /usr/local/bin/minio
 COPY --from=minio-client /usr/bin/mc /usr/local/bin/mc
-COPY --from=classroomio-api /app /opt/classroomio/api
-COPY --from=classroomio-dashboard /app /opt/classroomio/dashboard
+COPY --from=classroomio-dashboard /runtime/dashboard /opt/classroomio/dashboard
+COPY --from=classroomio-jobs /runtime/jobs /opt/classroomio/jobs
 
 RUN useradd --system --uid 1500 --user-group --create-home \
         --home-dir /home/classroomio --shell /usr/sbin/nologin classroomio \

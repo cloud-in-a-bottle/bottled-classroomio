@@ -27,6 +27,9 @@ class PackageTests(unittest.TestCase):
             self.assertRegex(dockerfile, pattern)
 
         self.assertNotRegex(dockerfile, r"classroomio/(api|dashboard|jobs):latest")
+        self.assertIn("--prod deploy --legacy /runtime/dashboard", dockerfile)
+        self.assertIn("--prod deploy --legacy /runtime/jobs", dockerfile)
+        self.assertNotIn("COPY --from=classroomio-api /app", dockerfile)
 
     def test_signed_storage_routes_preserve_host_and_uri(self):
         nginx = (ROOT / "nginx.conf").read_text()

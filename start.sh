@@ -18,9 +18,9 @@ JOBS_TEMP="$TEMP/jobs"
 MC_CONFIG="$TEMP/mc"
 BOOTSTRAP_MARKER="$PERSIST/bootstrap-complete"
 
-API_ROOT=/opt/classroomio/api
+API_ROOT=/app
 DASHBOARD_ROOT=/opt/classroomio/dashboard
-JOBS_ROOT=/app
+JOBS_ROOT=/opt/classroomio/jobs
 PG_BIN=/usr/lib/postgresql/16/bin
 
 PIDS=()
@@ -291,14 +291,14 @@ wait_for_process "$API_PID" "ClassroomIO API" \
 log "starting jobs worker"
 (
     cd "$JOBS_ROOT"
-    exec gosu classroomio env HOME="$TEMP/home" node apps/jobs/dist/index.js
+    exec gosu classroomio env HOME="$TEMP/home" node dist/index.js
 ) &
 JOBS_PID=$!
 PIDS+=("$JOBS_PID")
 
 log "starting dashboard"
 (
-    cd "$DASHBOARD_ROOT/apps/dashboard"
+    cd "$DASHBOARD_ROOT"
     exec gosu classroomio env HOME="$TEMP/home" PORT=3082 ORIGIN="$PUBLIC_ORIGIN" node build/index.js
 ) &
 DASHBOARD_PID=$!
