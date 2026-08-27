@@ -80,6 +80,7 @@ class PackageTests(unittest.TestCase):
         )
 
         self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("corepack pnpm@10.19.0 db:setup", (ROOT / "start.sh").read_text())
 
     def test_required_services_are_supervised(self):
         script = (ROOT / "start.sh").read_text()

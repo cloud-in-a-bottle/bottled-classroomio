@@ -242,7 +242,7 @@ export TMPDIR="$JOBS_TEMP"
 log "running database migrations"
 (
     cd "$DB_ROOT"
-    exec gosu classroomio env HOME="$TEMP/home" pnpm db:setup
+    exec gosu classroomio env HOME="$TEMP/home" corepack pnpm@10.19.0 db:setup
 ) &
 MIGRATION_PID=$!
 PIDS+=("$MIGRATION_PID")

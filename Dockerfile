@@ -59,6 +59,14 @@ RUN apt-get update \
     && chmod 0755 /opt/bottled-classroomio/start.sh \
         /usr/local/bin/minio /usr/local/bin/mc
 
+# Keep lightweight package-owned files updateable without regenerating the
+# large runtime release asset.
+COPY nginx.conf /etc/nginx/nginx.conf
+COPY dashboard-proxy.conf /etc/nginx/dashboard-proxy.conf
+COPY sidecar.js /opt/bottled-classroomio/sidecar.js
+COPY start.sh /opt/bottled-classroomio/start.sh
+RUN chmod 0755 /opt/bottled-classroomio/start.sh
+
 EXPOSE 8080
 
 ENTRYPOINT ["/usr/bin/tini", "--", "/opt/bottled-classroomio/start.sh"]
