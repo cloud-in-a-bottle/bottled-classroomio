@@ -81,6 +81,7 @@ class PackageTests(unittest.TestCase):
 
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertIn("corepack pnpm@10.19.0 db:setup", (ROOT / "start.sh").read_text())
+        self.assertIn("PORT=3081 node dist/index.js", (ROOT / "start.sh").read_text())
         self.assertIn('pkg.packageManager = "pnpm@10.19.0"', (ROOT / "Dockerfile").read_text())
 
     def test_required_services_are_supervised(self):

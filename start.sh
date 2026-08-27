@@ -282,7 +282,7 @@ fi
 log "starting API"
 (
     cd "$API_ROOT"
-    exec gosu classroomio env HOME="$TEMP/home" PORT=3081 node apps/api/dist/index.js
+    exec gosu classroomio env HOME="$TEMP/home" PORT=3081 node dist/index.js
 ) &
 API_PID=$!
 PIDS+=("$API_PID")
