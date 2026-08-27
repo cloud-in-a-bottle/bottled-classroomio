@@ -1,0 +1,26 @@
+[app]
+name = "classroomio"
+version = "0.1.0"
+description = "ClassroomIO learning management system with bundled PostgreSQL, Redis, MinIO, and background workers"
+authors = ["Andrew Laack <andrew@laack.co>"]
+
+[runtime.container]
+image = "Dockerfile"
+port = 8080
+
+[routing]
+health_check = "/_healthz"
+# ClassroomIO is multi-user. Owner HTML navigation uses the trusted OpenHost SSO
+# header; learner pages, native auth, API calls, and presigned storage requests
+# remain public at the router layer and are authorized inside the app.
+public_paths = ["/"]
+
+[resources]
+# API + dashboard + jobs + PostgreSQL + Redis + MinIO. Video processing can
+# briefly use substantially more memory than the idle stack.
+memory_mb = 4096
+cpu_cores = 2.0
+
+[data]
+app_data = true
+app_temp_data = true
