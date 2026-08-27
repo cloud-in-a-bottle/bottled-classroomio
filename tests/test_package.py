@@ -44,6 +44,8 @@ class PackageTests(unittest.TestCase):
         self.assertIn("bottled-classroomio-runtime/releases/download/runtime-f37d1cc", dockerfile)
         self.assertRegex(dockerfile, r"ARG ROOTFS_SHA256=[0-9a-f]{64}")
         self.assertIn("sha256sum -c -", dockerfile)
+        self.assertIn("--exclude=etc/hosts", dockerfile)
+        self.assertIn("--exclude=proc", dockerfile)
         self.assertNotIn("classroomio/api@", dockerfile)
 
     def test_signed_storage_routes_preserve_host_and_uri(self):

@@ -14,6 +14,12 @@ RUN apt-get update \
     && printf '%s  %s\n' "$ROOTFS_SHA256" /tmp/classroomio-rootfs.tar.gz \
         | sha256sum -c - \
     && tar -xzf /tmp/classroomio-rootfs.tar.gz -C / \
+        --exclude=dev \
+        --exclude=etc/hostname \
+        --exclude=etc/hosts \
+        --exclude=etc/resolv.conf \
+        --exclude=proc \
+        --exclude=sys \
     && rm -f /tmp/classroomio-rootfs.tar.gz
 
 ENV PNPM_HOME=/pnpm
