@@ -1,0 +1,30 @@
+# Build each component on an isolated GitHub runner. The upstream images include
+# full development workspaces; pnpm deploy converts them into portable runtime
+# trees before they are combined into the final image.
+
+FROM docker.io/classroomio/api@sha256:89f33303bf4988395895db6b3682505de44987e0b849a15a46dbbd71264f18ec AS api-source
+RUN pnpm --filter @cio/api --prod deploy --legacy /runtime/api
+
+FROM docker.io/classroomio/api@sha256:89f33303bf4988395895db6b3682505de44987e0b849a15a46dbbd71264f18ec AS db-source
+RUN pnpm --filter @cio/db deploy --legacy /runtime/db \
+    && cp -a /app/packages/db/src /runtime/db/src \
+    && cp /app/packages/db/drizzle.config.ts /app/packages/db/tsconfig.json \
+        /app/packages/db/users.json /runtime/db/
+
+FROM docker.io/library/node:20.20.2-bookworm-slim AS api-runtime
+COPY --from=api-source /runtime/api /opt/classroomio/api
+COPY --from=db-source /runtime/db /opt/classroomio/db
+
+FROM docker.io/classroomio/dashboard@sha256:5d71e9f39aaed493151f2a2a3a796e8a9f3d38e11a3c7b9e033b79ceb9e7b98f AS dashboard-source
+RUN pnpm --filter @cio/dashboard --prod deploy --legacy /runtime/dashboard \
+    && rm -rf /runtime/dashboard/build \
+    && cp -a /app/apps/dashboard/build /runtime/dashboard/build
+
+FROM docker.io/library/node:20.20.2-bookworm-slim AS dashboard-runtime
+COPY --from=dashboard-source /runtime/dashboard /opt/classroomio/dashboard
+
+FROM docker.io/classroomio/jobs@sha256:c36ef703f102fa538aaffc78366ab0d9b72bcf3474f7fd2f890294e65bffbc2c AS jobs-source
+RUN pnpm --filter @cio/jobs-worker --prod deploy --legacy /runtime/jobs
+
+FROM docker.io/library/node:20.20.2-bookworm-slim AS jobs-runtime
+COPY --from=jobs-source /runtime/jobs /opt/classroomio/jobs

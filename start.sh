@@ -18,7 +18,8 @@ JOBS_TEMP="$TEMP/jobs"
 MC_CONFIG="$TEMP/mc"
 BOOTSTRAP_MARKER="$PERSIST/bootstrap-complete"
 
-API_ROOT=/app
+API_ROOT=/opt/classroomio/api
+DB_ROOT=/opt/classroomio/db
 DASHBOARD_ROOT=/opt/classroomio/dashboard
 JOBS_ROOT=/opt/classroomio/jobs
 PG_BIN=/usr/lib/postgresql/16/bin
@@ -240,8 +241,8 @@ export TMPDIR="$JOBS_TEMP"
 
 log "running database migrations"
 (
-    cd "$API_ROOT"
-    exec gosu classroomio env HOME="$TEMP/home" pnpm --filter @cio/db db:setup
+    cd "$DB_ROOT"
+    exec gosu classroomio env HOME="$TEMP/home" pnpm db:setup
 ) &
 MIGRATION_PID=$!
 PIDS+=("$MIGRATION_PID")

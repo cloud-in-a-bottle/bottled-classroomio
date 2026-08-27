@@ -20,7 +20,7 @@ class PackageTests(unittest.TestCase):
         self.assertTrue(manifest["data"]["app_temp_data"])
 
     def test_application_images_are_digest_pinned(self):
-        dockerfile = (ROOT / "Dockerfile").read_text()
+        dockerfile = (ROOT / "Dockerfile.components").read_text()
 
         for image in ("api", "dashboard", "jobs"):
             pattern = rf"classroomio/{image}@sha256:[0-9a-f]{{64}}"
@@ -29,7 +29,14 @@ class PackageTests(unittest.TestCase):
         self.assertNotRegex(dockerfile, r"classroomio/(api|dashboard|jobs):latest")
         self.assertIn("--prod deploy --legacy /runtime/dashboard", dockerfile)
         self.assertIn("--prod deploy --legacy /runtime/jobs", dockerfile)
-        self.assertNotIn("COPY --from=classroomio-api /app", dockerfile)
+
+    def test_published_image_contains_all_component_runtimes(self):
+        dockerfile = (ROOT / "Dockerfile.image").read_text()
+
+        self.assertIn("bottled-classroomio-components:api-${COMPONENT_TAG}", dockerfile)
+        self.assertIn("bottled-classroomio-components:dashboard-${COMPONENT_TAG}", dockerfile)
+        self.assertIn("bottled-classroomio-components:jobs-${COMPONENT_TAG}", dockerfile)
+        self.assertIn("COPY --from=api-runtime /opt/classroomio", dockerfile)
 
     def test_signed_storage_routes_preserve_host_and_uri(self):
         nginx = (ROOT / "nginx.conf").read_text()
