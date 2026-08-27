@@ -5,6 +5,14 @@ on:
   push:
     branches:
       - andrew/initial-package
+    paths:
+      - Dockerfile.components
+      - Dockerfile.image
+      - dashboard-proxy.conf
+      - nginx.conf
+      - sidecar.js
+      - start.sh
+
 
 permissions:
   contents: read
