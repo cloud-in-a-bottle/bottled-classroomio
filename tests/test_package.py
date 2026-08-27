@@ -45,8 +45,9 @@ class PackageTests(unittest.TestCase):
         self.assertRegex(dockerfile, r"ARG ROOTFS_SHA256=[0-9a-f]{64}")
         self.assertIn("sha256sum -c -", dockerfile)
         self.assertIn("extract-rootfs.py", dockerfile)
-        self.assertIn("FROM scratch", dockerfile)
-        self.assertIn("COPY --from=rootfs /rootfs /", dockerfile)
+        self.assertIn("mv /tmp/classroomio-rootfs/opt/classroomio /opt/classroomio", dockerfile)
+        self.assertIn("rm -rf /tmp/classroomio-rootfs", dockerfile)
+        self.assertNotIn("COPY --from=rootfs", dockerfile)
         self.assertNotIn("classroomio/api@", dockerfile)
 
     def test_signed_storage_routes_preserve_host_and_uri(self):
