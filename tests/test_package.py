@@ -76,6 +76,7 @@ class PackageTests(unittest.TestCase):
         self.assertIn("type: 'login-link'", sidecar)
         self.assertIn("exp: now + 15", sidecar)
         self.assertIn("createOwnerSessionCookie", sidecar)
+        self.assertIn("/_openhost_sso_complete", sidecar)
         self.assertIn("session?.user?.id === ownerUserId", sidecar)
         self.assertIn("add_header Set-Cookie $sso_cookie always;", nginx)
 

@@ -115,10 +115,11 @@ async function handleSso(request, response) {
   const redirect = safeRedirectPath(request.headers['x-original-uri']);
   try {
     const sessionCookie = await createOwnerSessionCookie();
+    const completionUrl = `/_openhost_sso_complete?redirect=${encodeURIComponent(redirect)}`;
     response.writeHead(401, {
       'Cache-Control': 'no-store',
       'X-SSO-Cookie': sessionCookie,
-      'X-SSO-Redirect': redirect
+      'X-SSO-Redirect': completionUrl
     });
     response.end();
   } catch (error) {
@@ -161,6 +162,14 @@ async function handleHealth(response) {
 }
 
 const server = http.createServer(async (request, response) => {
+  if (request.url?.startsWith('/complete')) {
+    const url = new URL(request.url, 'http://localhost');
+    const redirect = safeRedirectPath(url.searchParams.get('redirect'));
+    response.writeHead(302, { 'Cache-Control': 'no-store', Location: redirect });
+    response.end();
+    return;
+  }
+
   if (request.url === '/sso') {
     await handleSso(request, response);
     return;
