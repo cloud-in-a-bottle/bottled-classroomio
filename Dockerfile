@@ -67,14 +67,21 @@ COPY sidecar.js /opt/bottled-classroomio/sidecar.js
 COPY start.sh /opt/bottled-classroomio/start.sh
 RUN chmod 0755 /opt/bottled-classroomio/start.sh \
     && node -e 'const fs = require("node:fs"); const path = "/opt/classroomio/db/package.json"; const pkg = JSON.parse(fs.readFileSync(path, "utf8")); pkg.packageManager = "pnpm@10.19.0"; fs.writeFileSync(path, JSON.stringify(pkg, null, 2) + "\n")' \
+    && mkdir -p /opt/classroomio/workspace-links \
     && for runtime in api dashboard jobs; do \
-        canonical="/opt/classroomio/$runtime/node_modules/@cio"; \
-        [ -d "$canonical" ] || continue; \
+        for dependency in /opt/classroomio/$runtime/node_modules/@cio/*; do \
+            [ -d "$dependency" ] || continue; \
+            name="$(basename "$dependency")"; \
+            [ -e "/opt/classroomio/workspace-links/$name" ] \
+                || ln -s "$dependency" "/opt/classroomio/workspace-links/$name"; \
+        done; \
+    done \
+    && for runtime in api dashboard jobs; do \
         for package in /opt/classroomio/$runtime/node_modules/.pnpm/@cio+*/node_modules/@cio/*; do \
             [ -d "$package" ] || continue; \
             mkdir -p "$package/node_modules"; \
             rm -rf "$package/node_modules/@cio"; \
-            ln -s "$canonical" "$package/node_modules/@cio"; \
+            ln -s /opt/classroomio/workspace-links "$package/node_modules/@cio"; \
         done; \
     done \
     && cd /opt/classroomio/api/node_modules/@cio/question-types \

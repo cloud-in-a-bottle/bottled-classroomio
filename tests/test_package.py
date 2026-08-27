@@ -83,7 +83,8 @@ class PackageTests(unittest.TestCase):
         self.assertIn("corepack pnpm@10.19.0 db:setup", (ROOT / "start.sh").read_text())
         self.assertIn("PORT=3081 node dist/index.js", (ROOT / "start.sh").read_text())
         self.assertIn('pkg.packageManager = "pnpm@10.19.0"', (ROOT / "Dockerfile").read_text())
-        self.assertIn('ln -s "$canonical" "$package/node_modules/@cio"', (ROOT / "Dockerfile").read_text())
+        self.assertIn("/opt/classroomio/workspace-links", (ROOT / "Dockerfile").read_text())
+        self.assertIn('ln -s /opt/classroomio/workspace-links "$package/node_modules/@cio"', (ROOT / "Dockerfile").read_text())
         self.assertIn("node_modules/.bin/tsc -p tsconfig.json", (ROOT / "Dockerfile").read_text())
         self.assertIn("api/node_modules/zod /opt/classroomio/jobs/node_modules/zod", (ROOT / "Dockerfile").read_text())
 
