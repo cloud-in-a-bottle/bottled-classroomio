@@ -76,7 +76,12 @@ RUN chmod 0755 /opt/bottled-classroomio/start.sh \
             rm -rf "$package/node_modules/@cio"; \
             ln -s "$canonical" "$package/node_modules/@cio"; \
         done; \
-    done
+    done \
+    && cd /opt/classroomio/api/node_modules/@cio/question-types \
+    && /opt/classroomio/db/node_modules/.bin/tsc -p tsconfig.json \
+    && /opt/classroomio/db/node_modules/.bin/tsc-alias -p tsconfig.json \
+    && rm -rf /opt/classroomio/dashboard/node_modules/@cio/question-types/dist \
+    && cp -a dist /opt/classroomio/dashboard/node_modules/@cio/question-types/dist
 
 EXPOSE 8080
 
