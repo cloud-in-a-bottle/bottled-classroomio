@@ -66,7 +66,17 @@ COPY dashboard-proxy.conf /etc/nginx/dashboard-proxy.conf
 COPY sidecar.js /opt/bottled-classroomio/sidecar.js
 COPY start.sh /opt/bottled-classroomio/start.sh
 RUN chmod 0755 /opt/bottled-classroomio/start.sh \
-    && node -e 'const fs = require("node:fs"); const path = "/opt/classroomio/db/package.json"; const pkg = JSON.parse(fs.readFileSync(path, "utf8")); pkg.packageManager = "pnpm@10.19.0"; fs.writeFileSync(path, JSON.stringify(pkg, null, 2) + "\n")'
+    && node -e 'const fs = require("node:fs"); const path = "/opt/classroomio/db/package.json"; const pkg = JSON.parse(fs.readFileSync(path, "utf8")); pkg.packageManager = "pnpm@10.19.0"; fs.writeFileSync(path, JSON.stringify(pkg, null, 2) + "\n")' \
+    && for runtime in api dashboard jobs; do \
+        canonical="/opt/classroomio/$runtime/node_modules/@cio"; \
+        [ -d "$canonical" ] || continue; \
+        for package in /opt/classroomio/$runtime/node_modules/.pnpm/@cio+*/node_modules/@cio/*; do \
+            [ -d "$package" ] || continue; \
+            mkdir -p "$package/node_modules"; \
+            rm -rf "$package/node_modules/@cio"; \
+            ln -s "$canonical" "$package/node_modules/@cio"; \
+        done; \
+    done
 
 EXPOSE 8080
 
