@@ -26,7 +26,7 @@ The app is available at `https://classroomio.<your-zone>/`.
 
 ## OpenHost SSO
 
-The package provisions a passwordless `openhost-owner-<random>@<your-zone>` ClassroomIO account as the organization administrator. The random identity is persisted with the app to avoid colliding with an existing learner account. When the OpenHost router stamps an HTML navigation with its verified `X-OpenHost-Is-Owner` header, the SSO sidecar mints a one-minute ClassroomIO login-link token and signs the owner in through ClassroomIO's supported auth endpoint. No owner password is stored.
+The package provisions a passwordless `openhost-owner-<random>@<your-zone>` ClassroomIO account as the organization administrator. The random identity is persisted with the app to avoid colliding with an existing learner account. When the OpenHost router stamps an HTML navigation with its verified `X-OpenHost-Is-Owner` header, the SSO sidecar consumes a short-lived ClassroomIO login-link internally and returns the resulting session cookie. No owner password is stored and no login token enters the browser URL.
 
 ClassroomIO still owns learner authentication. The manifest intentionally makes all paths public at the Cloud in a Bottle router layer so learners, invite links, API clients, public courses, and signed uploads can reach the app. Anonymous and learner requests never trigger owner SSO and remain subject to ClassroomIO's native authorization.
 

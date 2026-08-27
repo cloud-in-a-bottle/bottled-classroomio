@@ -8,6 +8,7 @@ import {
   organizationmember,
   organizationPlan,
   profile,
+  session,
   user
 } from '@db/drizzle';
 import { ROLE } from '@cio/utils/constants';
@@ -96,6 +97,7 @@ async function ensureOwnerOrganization(userId: string): Promise<void> {
 async function main(): Promise<void> {
   const userId = await ensureOwnerUser();
   await ensureOwnerOrganization(userId);
+  await db.delete(session).where(eq(session.userId, userId));
   console.log(`OpenHost owner ready: ${ownerEmail} (${userId})`);
 }
 

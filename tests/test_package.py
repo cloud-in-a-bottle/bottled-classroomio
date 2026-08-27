@@ -74,8 +74,10 @@ class PackageTests(unittest.TestCase):
         self.assertIn("auth_request /_sso_auth;", (ROOT / "sso-dashboard-proxy.conf").read_text())
         self.assertIn("x-openhost-is-owner", sidecar)
         self.assertIn("type: 'login-link'", sidecar)
-        self.assertIn("exp: now + 60", sidecar)
+        self.assertIn("exp: now + 15", sidecar)
+        self.assertIn("createOwnerSessionCookie", sidecar)
         self.assertIn("session?.user?.id === ownerUserId", sidecar)
+        self.assertIn("add_header Set-Cookie $sso_cookie always;", nginx)
 
     def test_owner_account_is_bootstrapped_without_password(self):
         bootstrap = (ROOT / "bootstrap-openhost-owner.ts").read_text()
@@ -83,6 +85,7 @@ class PackageTests(unittest.TestCase):
         self.assertIn("emailVerified: true", bootstrap)
         self.assertIn("roleId: ROLE.ADMIN", bootstrap)
         self.assertIn("db.transaction", bootstrap)
+        self.assertIn("db.delete(session)", bootstrap)
         self.assertNotIn("password", bootstrap.lower())
 
     def test_start_script_is_valid_bash(self):

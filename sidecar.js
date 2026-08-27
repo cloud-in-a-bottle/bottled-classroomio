@@ -64,10 +64,36 @@ function mintLoginLinkToken() {
     email: ownerEmail,
     type: 'login-link',
     iat: now,
-    exp: now + 60
+    exp: now + 15
   });
   const signature = crypto.createHmac('sha256', authSecret).update(`${header}.${payload}`).digest('base64url');
   return `${header}.${payload}.${signature}`;
+}
+
+async function createOwnerSessionCookie() {
+  const query = new URLSearchParams({ token: mintLoginLinkToken(), redirect: '/' });
+  const callback = await fetch(`http://127.0.0.1:3081/api/auth/login-link?${query}`, {
+    headers: {
+      'X-Forwarded-Host': appHost,
+      'X-Forwarded-Proto': 'https'
+    },
+    redirect: 'manual',
+    signal: AbortSignal.timeout(3000)
+  });
+  if (callback.status < 300 || callback.status >= 400) {
+    throw new Error(`login-link callback returned ${callback.status}`);
+  }
+
+  const cookies =
+    typeof callback.headers.getSetCookie === 'function'
+      ? callback.headers.getSetCookie()
+      : [callback.headers.get('set-cookie')].filter(Boolean);
+  const sessionCookie = cookies.find((cookie) => cookie.startsWith('__Secure-classroomio.session_token='));
+  if (!sessionCookie) {
+    throw new Error('login-link callback did not return the session token cookie');
+  }
+
+  return sessionCookie;
 }
 
 function safeRedirectPath(value) {
@@ -87,12 +113,19 @@ async function handleSso(request, response) {
   }
 
   const redirect = safeRedirectPath(request.headers['x-original-uri']);
-  const query = new URLSearchParams({ token: mintLoginLinkToken(), redirect });
-  response.writeHead(401, {
-    'Cache-Control': 'no-store',
-    'X-SSO-Redirect': `/api/auth/login-link?${query}`
-  });
-  response.end();
+  try {
+    const sessionCookie = await createOwnerSessionCookie();
+    response.writeHead(401, {
+      'Cache-Control': 'no-store',
+      'X-SSO-Cookie': sessionCookie,
+      'X-SSO-Redirect': redirect
+    });
+    response.end();
+  } catch (error) {
+    console.error('[sso] failed to create owner session:', error);
+    response.writeHead(503);
+    response.end();
+  }
 }
 
 function jobsAreRunning() {
