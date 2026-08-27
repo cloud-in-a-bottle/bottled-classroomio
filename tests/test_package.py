@@ -70,6 +70,7 @@ class PackageTests(unittest.TestCase):
         self.assertIn("location = /_sso_auth", nginx)
         self.assertIn("location @openhost_sso", nginx)
         self.assertIn("location = /api/auth/login-link", nginx)
+        self.assertIn("absolute_redirect off;", nginx)
         self.assertIn("location ^~ /api/auth/", nginx)
         self.assertIn("auth_request /_sso_auth;", (ROOT / "sso-dashboard-proxy.conf").read_text())
         self.assertIn("x-openhost-is-owner", sidecar)
