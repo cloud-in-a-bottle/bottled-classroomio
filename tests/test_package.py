@@ -38,6 +38,14 @@ class PackageTests(unittest.TestCase):
         self.assertIn("bottled-classroomio-components:jobs-${COMPONENT_TAG}", dockerfile)
         self.assertIn("COPY --from=api-runtime /opt/classroomio", dockerfile)
 
+    def test_deployment_imports_checksum_pinned_rootfs(self):
+        dockerfile = (ROOT / "Dockerfile").read_text()
+
+        self.assertIn("bottled-classroomio-runtime/releases/download/runtime-f37d1cc", dockerfile)
+        self.assertRegex(dockerfile, r"ARG ROOTFS_SHA256=[0-9a-f]{64}")
+        self.assertIn("sha256sum -c -", dockerfile)
+        self.assertNotIn("classroomio/api@", dockerfile)
+
     def test_signed_storage_routes_preserve_host_and_uri(self):
         nginx = (ROOT / "nginx.conf").read_text()
 

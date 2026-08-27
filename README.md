@@ -61,7 +61,7 @@ The package starts without external services. Email delivery and AI features rem
 
 ## Upstream version
 
-The Dockerfile pins the API, dashboard, and jobs images by immutable manifest digest. Update all three together after testing a coherent upstream build; never mix versions across the services.
+`Dockerfile.components` pins the API, dashboard, and jobs images by immutable manifest digest. GitHub Actions compacts those images into one runtime, exports it to the public `bottled-classroomio-runtime` release repository, and the deployment Dockerfile verifies that release asset by SHA-256 before importing it. Update all three upstream digests together; never mix versions across the services.
 
 ## Validate
 
