@@ -1,7 +1,7 @@
 [app]
 name = "classroomio"
 version = "0.1.0"
-description = "ClassroomIO learning management system with OpenHost owner SSO, PostgreSQL, Redis, MinIO, and background workers"
+description = "ClassroomIO learning management system with bundled PostgreSQL, Redis, MinIO, and background workers"
 authors = ["Andrew Laack <andrew@laack.co>"]
 
 [runtime.container]
