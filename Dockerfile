@@ -63,8 +63,10 @@ RUN apt-get update \
 # large runtime release asset.
 COPY nginx.conf /etc/nginx/nginx.conf
 COPY dashboard-proxy.conf /etc/nginx/dashboard-proxy.conf
+COPY sso-dashboard-proxy.conf /etc/nginx/sso-dashboard-proxy.conf
 COPY sidecar.js /opt/bottled-classroomio/sidecar.js
 COPY start.sh /opt/bottled-classroomio/start.sh
+COPY bootstrap-openhost-owner.ts /opt/classroomio/db/src/scripts/openhost-owner.ts
 RUN chmod 0755 /opt/bottled-classroomio/start.sh \
     && node -e 'const fs = require("node:fs"); const path = "/opt/classroomio/db/package.json"; const pkg = JSON.parse(fs.readFileSync(path, "utf8")); pkg.packageManager = "pnpm@10.19.0"; fs.writeFileSync(path, JSON.stringify(pkg, null, 2) + "\n")' \
     && mkdir -p /opt/classroomio/workspace-links \

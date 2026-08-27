@@ -1,7 +1,7 @@
 [app]
 name = "classroomio"
 version = "0.1.0"
-description = "ClassroomIO learning management system with bundled PostgreSQL, Redis, MinIO, and background workers"
+description = "ClassroomIO learning management system with OpenHost owner SSO, PostgreSQL, Redis, MinIO, and background workers"
 authors = ["Andrew Laack <andrew@laack.co>"]
 
 [runtime.container]
@@ -10,9 +10,9 @@ port = 8080
 
 [routing]
 health_check = "/_healthz"
-# ClassroomIO is multi-user and provides its own authentication. Learner pages,
-# invite links, API calls, and presigned object-storage requests must bypass the
-# zone-owner gate.
+# ClassroomIO is multi-user. Owner HTML navigation uses the trusted OpenHost SSO
+# header; learner pages, native auth, API calls, and presigned storage requests
+# remain public at the router layer and are authorized inside the app.
 public_paths = ["/"]
 
 [resources]

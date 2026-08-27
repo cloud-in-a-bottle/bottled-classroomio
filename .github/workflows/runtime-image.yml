@@ -8,9 +8,11 @@ on:
     paths:
       - Dockerfile.components
       - Dockerfile.image
+      - bootstrap-openhost-owner.ts
       - dashboard-proxy.conf
       - nginx.conf
       - sidecar.js
+      - sso-dashboard-proxy.conf
       - start.sh
 
 

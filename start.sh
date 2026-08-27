@@ -16,7 +16,6 @@ SECRETS_DIR="$PERSIST/secrets"
 LOG_DIR="$TEMP/log"
 JOBS_TEMP="$TEMP/jobs"
 MC_CONFIG="$TEMP/mc"
-BOOTSTRAP_MARKER="$PERSIST/bootstrap-complete"
 
 API_ROOT=/opt/classroomio/api
 DB_ROOT=/opt/classroomio/db
@@ -130,12 +129,15 @@ ensure_secret "$SECRETS_DIR/better-auth-secret" 32
 ensure_secret "$SECRETS_DIR/private-server-key" 32
 ensure_secret "$SECRETS_DIR/minio-access-key" 10
 ensure_secret "$SECRETS_DIR/minio-secret-key" 24
+ensure_secret "$SECRETS_DIR/owner-email-suffix" 8
 
 DB_PASSWORD="$(<"$SECRETS_DIR/postgres-password")"
 BETTER_AUTH_SECRET="$(<"$SECRETS_DIR/better-auth-secret")"
 PRIVATE_SERVER_KEY="$(<"$SECRETS_DIR/private-server-key")"
 MINIO_ACCESS_KEY="$(<"$SECRETS_DIR/minio-access-key")"
 MINIO_SECRET_KEY="$(<"$SECRETS_DIR/minio-secret-key")"
+OWNER_EMAIL_SUFFIX="$(<"$SECRETS_DIR/owner-email-suffix")"
+OWNER_EMAIL="openhost-owner-${OWNER_EMAIL_SUFFIX}@${ZONE_DOMAIN}"
 
 if [[ ! -s "$PG_DATA/PG_VERSION" ]]; then
     log "initializing PostgreSQL"
@@ -252,31 +254,28 @@ if ! wait "$MIGRATION_PID"; then
 fi
 unset 'PIDS[-1]'
 
-monitor_bootstrap_completion() {
-    while [[ ! -f "$BOOTSTRAP_MARKER" ]]; do
-        local organization_count
-        local normalized_count
-        organization_count="$(
-            gosu postgres "$PG_BIN/psql" -d classroomio -tAc 'SELECT count(*) FROM organization' \
-                2>/dev/null || true
-        )"
-        normalized_count="${organization_count//[[:space:]]/}"
-        if [[ "$normalized_count" =~ ^[1-9][0-9]*$ ]]; then
-            touch "$BOOTSTRAP_MARKER"
-            chmod 0644 "$BOOTSTRAP_MARKER"
-            log "first organization created; learner authentication is now public"
-            # Remain alive so cleanup can safely retain and signal this PID
-            # without risking later PID reuse.
-            while sleep 3600; do :; done
-        fi
-        sleep 2
-    done
-}
+log "bootstrapping OpenHost owner account"
+(
+    cd "$DB_ROOT"
+    exec gosu classroomio env HOME="$TEMP/home" \
+        ./node_modules/.bin/tsx src/scripts/openhost-owner.ts "OpenHost" "$OWNER_EMAIL" openhost
+) &
+OWNER_BOOTSTRAP_PID=$!
+PIDS+=("$OWNER_BOOTSTRAP_PID")
+if ! wait "$OWNER_BOOTSTRAP_PID"; then
+    log "OpenHost owner bootstrap failed"
+    exit 1
+fi
+unset 'PIDS[-1]'
 
-if [[ ! -f "$BOOTSTRAP_MARKER" ]]; then
-    monitor_bootstrap_completion &
-    BOOTSTRAP_MONITOR_PID=$!
-    PIDS+=("$BOOTSTRAP_MONITOR_PID")
+OWNER_USER_ID="$(
+    gosu postgres "$PG_BIN/psql" -d classroomio -tAc \
+        "SELECT id FROM \"user\" WHERE email = '$OWNER_EMAIL' LIMIT 1"
+)"
+OWNER_USER_ID="${OWNER_USER_ID//[[:space:]]/}"
+if [[ ! "$OWNER_USER_ID" =~ ^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$ ]]; then
+    log "OpenHost owner bootstrap returned an invalid user ID"
+    exit 1
 fi
 
 log "starting API"
@@ -307,10 +306,13 @@ PIDS+=("$DASHBOARD_PID")
 wait_for_process "$DASHBOARD_PID" "ClassroomIO dashboard" \
     curl -fsS http://127.0.0.1:3082/login
 
-log "starting bootstrap and health sidecar"
+log "starting SSO and health sidecar"
 gosu classroomio env \
-    BOOTSTRAP_MARKER="$BOOTSTRAP_MARKER" \
+    BETTER_AUTH_SECRET="$BETTER_AUTH_SECRET" \
+    APP_HOST="$APP_HOST" \
     JOBS_PID="$JOBS_PID" \
+    OWNER_EMAIL="$OWNER_EMAIL" \
+    OWNER_USER_ID="$OWNER_USER_ID" \
     SIDECAR_PORT=8090 \
     node /opt/bottled-classroomio/sidecar.js &
 SIDECAR_PID=$!

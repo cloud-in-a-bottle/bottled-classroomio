@@ -24,13 +24,11 @@ oh app deploy https://github.com/cloud-in-a-bottle/bottled-classroomio --name cl
 
 The app is available at `https://classroomio.<your-zone>/`.
 
-## First boot
+## OpenHost SSO
 
-Sign in to your Cloud in a Bottle zone as its owner, then open `/signup` and create the first account. Until the first organization exists, the package blocks ClassroomIO authentication requests that do not carry the router's authenticated-owner header. This prevents an internet visitor from claiming a fresh deployment.
+The package provisions a passwordless `openhost-owner-<random>@<your-zone>` ClassroomIO account as the organization administrator. The random identity is persisted with the app to avoid colliding with an existing learner account. When the OpenHost router stamps an HTML navigation with its verified `X-OpenHost-Is-Owner` header, the SSO sidecar mints a one-minute ClassroomIO login-link token and signs the owner in through ClassroomIO's supported auth endpoint. No owner password is stored.
 
-ClassroomIO recognizes the empty self-hosted instance, verifies the first account automatically, and guides it through creating the single organization. The package then opens normal authentication automatically, and later users join as learners according to the organization's signup settings.
-
-ClassroomIO owns authentication for this package. The manifest intentionally makes all paths public at the Cloud in a Bottle router layer so learners, invite links, API clients, and signed uploads can reach the app; ClassroomIO still enforces its own authorization.
+ClassroomIO still owns learner authentication. The manifest intentionally makes all paths public at the Cloud in a Bottle router layer so learners, invite links, API clients, public courses, and signed uploads can reach the app. Anonymous and learner requests never trigger owner SSO and remain subject to ClassroomIO's native authorization.
 
 ## Persistence
 

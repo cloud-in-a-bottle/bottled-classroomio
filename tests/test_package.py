@@ -63,15 +63,27 @@ class PackageTests(unittest.TestCase):
         self.assertIn("proxy_buffer_size 64k;", (ROOT / "dashboard-proxy.conf").read_text())
         self.assertIn("proxy_buffers 8 64k;", (ROOT / "dashboard-proxy.conf").read_text())
 
-    def test_fresh_instance_auth_is_owner_gated(self):
+    def test_owner_uses_openhost_sso(self):
         nginx = (ROOT / "nginx.conf").read_text()
         sidecar = (ROOT / "sidecar.js").read_text()
 
+        self.assertIn("location = /_sso_auth", nginx)
+        self.assertIn("location @openhost_sso", nginx)
+        self.assertIn("location = /api/auth/login-link", nginx)
         self.assertIn("location ^~ /api/auth/", nginx)
-        self.assertIn("location ^~ /proxy/api/auth/", nginx)
-        self.assertIn("auth_request /_bootstrap_auth;", nginx)
+        self.assertIn("auth_request /_sso_auth;", (ROOT / "sso-dashboard-proxy.conf").read_text())
         self.assertIn("x-openhost-is-owner", sidecar)
-        self.assertIn("fs.existsSync(bootstrapMarker)", sidecar)
+        self.assertIn("type: 'login-link'", sidecar)
+        self.assertIn("exp: now + 60", sidecar)
+        self.assertIn("session?.user?.id === ownerUserId", sidecar)
+
+    def test_owner_account_is_bootstrapped_without_password(self):
+        bootstrap = (ROOT / "bootstrap-openhost-owner.ts").read_text()
+
+        self.assertIn("emailVerified: true", bootstrap)
+        self.assertIn("roleId: ROLE.ADMIN", bootstrap)
+        self.assertIn("db.transaction", bootstrap)
+        self.assertNotIn("password", bootstrap.lower())
 
     def test_start_script_is_valid_bash(self):
         result = subprocess.run(
