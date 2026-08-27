@@ -7,20 +7,16 @@ FROM docker.io/library/debian:bookworm-slim
 ARG ROOTFS_URL=https://github.com/cloud-in-a-bottle/bottled-classroomio-runtime/releases/download/runtime-f37d1cc/classroomio-rootfs.tar.gz
 ARG ROOTFS_SHA256=172981b5d5b685abe4af75deb9bfb8142d7efa1b7d4040f3f5fd4f514ac777a7
 
+COPY scripts/extract-rootfs.py /tmp/extract-rootfs.py
+
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends ca-certificates curl \
+    && apt-get install -y --no-install-recommends ca-certificates curl python3 \
     && curl -fsSL --retry 5 --retry-all-errors --connect-timeout 15 \
         --max-time 1800 "$ROOTFS_URL" -o /tmp/classroomio-rootfs.tar.gz \
     && printf '%s  %s\n' "$ROOTFS_SHA256" /tmp/classroomio-rootfs.tar.gz \
         | sha256sum -c - \
-    && tar -xzf /tmp/classroomio-rootfs.tar.gz -C / \
-        --exclude=dev \
-        --exclude=etc/hostname \
-        --exclude=etc/hosts \
-        --exclude=etc/resolv.conf \
-        --exclude=proc \
-        --exclude=sys \
-    && rm -f /tmp/classroomio-rootfs.tar.gz
+    && python3 /tmp/extract-rootfs.py /tmp/classroomio-rootfs.tar.gz / \
+    && rm -f /tmp/classroomio-rootfs.tar.gz /tmp/extract-rootfs.py
 
 ENV PNPM_HOME=/pnpm
 ENV PATH=$PNPM_HOME:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
