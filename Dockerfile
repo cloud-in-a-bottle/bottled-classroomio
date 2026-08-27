@@ -81,7 +81,8 @@ RUN chmod 0755 /opt/bottled-classroomio/start.sh \
     && /opt/classroomio/db/node_modules/.bin/tsc -p tsconfig.json \
     && /opt/classroomio/db/node_modules/.bin/tsc-alias -p tsconfig.json \
     && rm -rf /opt/classroomio/dashboard/node_modules/@cio/question-types/dist \
-    && cp -a dist /opt/classroomio/dashboard/node_modules/@cio/question-types/dist
+    && cp -a dist /opt/classroomio/dashboard/node_modules/@cio/question-types/dist \
+    && ln -s /opt/classroomio/api/node_modules/zod /opt/classroomio/jobs/node_modules/zod
 
 EXPOSE 8080
 
